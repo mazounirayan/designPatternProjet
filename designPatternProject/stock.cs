@@ -6,7 +6,17 @@ using System.Threading.Tasks;
 
 namespace designPatternProject
 {
-    internal class stock
+    internal class Stock
     {
+        public List<Robot> Robots { get; set; }
+        public List<Piece> Pieces { get; set; }
+
+      
+
+        public Stock(List<Piece> pieces, List<Robot> robots)
+        {
+            Pieces = pieces;
+            Robots = robots;
+        }
     }
 }
