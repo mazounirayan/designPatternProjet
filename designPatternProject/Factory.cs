@@ -17,7 +17,7 @@ namespace designPatternProject
             this.depot = depot;
         }
 
-  
+
 
         public void totalStock(Dictionary<string, int> commandes)
         {
@@ -95,7 +95,7 @@ namespace designPatternProject
                         {
                             var pieceInStock = depot.pieces.FirstOrDefault(r => r.name == piece.name);
 
-                            if (pieceInStock != null && pieceInStock.quantite>= piece.quantite)
+                            if (pieceInStock != null && pieceInStock.quantite >= piece.quantite)
                             {
                                 Console.WriteLine($"GET_OUT_STOCK {piece.quantite} {piece.name}");
                                 pieceInStock.quantite -= piece.quantite;
@@ -115,7 +115,7 @@ namespace designPatternProject
 
                         }
 
-                        if (stockPieces.Count == 4) 
+                        if (stockPieces.Count == 4)
                         {
                             string core = stockPieces[0];
                             string generator = stockPieces[1];
@@ -145,53 +145,65 @@ namespace designPatternProject
         {
             return pieceName.StartsWith("Core_");
         }
-
-
-
-        public void VerifyCommand(Dictionary<string, int> commandes)
+        public string VerifyCommand(Dictionary<string, int> commandes)
         {
             if (commandes == null || commandes.Count == 0)
-            {
-                PrintError("Commande vide ou incorrecte.");
-                return;
-            }
+                return "ERROR Commande vide ou incorrecte.";
 
             foreach (var c in commandes)
             {
                 var robot = depot.robots.FirstOrDefault(r => r.name == c.Key);
-
                 if (robot == null)
-                {
-                    PrintError($"'{c.Key}' is not a recognized robot");
-                    return;
-                }
+                    return $"ERROR '{c.Key}' is not a recognized robot";
 
                 var requiredPieces = robot.GetRequiredPiecesForQuantity(c.Value);
                 foreach (var piece in requiredPieces)
                 {
                     var pieceInStock = depot.pieces.FirstOrDefault(p => p.name == piece.Key);
                     if (pieceInStock == null)
-                    {
-                        PrintError($"Pièce inconnue : {piece.Key}");
-                        return;
-                    }
+                        return $"ERROR Pièce inconnue : {piece.Key}";
+
                     if (pieceInStock.quantite < piece.Value)
-                    {
-                        Console.WriteLine("UNAVAILABLE");
-                        return;
-                    }
+                        return "UNAVAILABLE";
                 }
             }
 
-            Console.WriteLine("AVAILABLE");
+            return "AVAILABLE";
         }
+
+        public void ProduceCommand(Dictionary<string, int> commandes)
+        {
+            var result = VerifyCommand(commandes);
+            if (result != "AVAILABLE")
+            {
+                Console.WriteLine(result);
+                return;
+            }
+
+            foreach (var order in commandes)
+            {
+                var robot = depot.robots.First(r =>
+                    r.name.Equals(order.Key, StringComparison.OrdinalIgnoreCase));
+                robot.quantite += order.Value;
+
+                foreach (var kv in robot.GetRequiredPiecesForQuantity(order.Value))
+                {
+                    var piece = depot.pieces.First(p =>
+                        p.name.Equals(kv.Key, StringComparison.OrdinalIgnoreCase));
+                    piece.quantite -= kv.Value;
+                }
+            }
+
+            Console.WriteLine("STOCK_UPDATED");
+        }
+
         private void PrintError(string message)
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.Write("ERROR ");
             Console.ResetColor();
             Console.WriteLine(message);
-            Thread.Sleep(1000);  
+            Thread.Sleep(1000);
         }
 
     }

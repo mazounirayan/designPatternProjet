@@ -8,7 +8,7 @@ class Program
 {
     static Stock init()
     {
-       
+
         var piecesTotal = new List<Piece>
         {
           new Piece ("Core_CM1", 10),
@@ -81,13 +81,13 @@ class Program
 
             var elements = input.Substring(indexPremierEspace + 1).Trim();
 
-           
+
 
             Dictionary<string, int> commandes = TraiterCommande(elements);
 
-         
 
-            switch (USER_INSTRUCTION  )
+
+            switch (USER_INSTRUCTION)
             {
                 case "STOCKS":
                     factory.displayStock();
@@ -102,18 +102,32 @@ class Program
                     factory.ProcessInstructionCommand(commandes);
                     break;
                 case "VERIFY":
-                    factory.VerifyCommand(commandes);
+                    string result = factory.VerifyCommand(commandes);
+                    if (result.StartsWith("ERROR"))
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine(result);
+                        Console.ResetColor();
+                    }
+                    else
+                    {
+                        Console.WriteLine(result);
+                    }
                     break;
+                case "PRODUCE":
+                    factory.ProduceCommand(commandes);
+                    break;
+
             }
 
-            
+
         }
         else
         {
             Console.WriteLine("Format invalide !");
         }
-        
-     
+
+
     }
 
     static Dictionary<string, int> TraiterCommande(string elements)
@@ -131,22 +145,22 @@ class Program
 
             //if (parts.Length >= 1)
             //{
-                if (int.TryParse(parts[0], out int quantite))
+            if (int.TryParse(parts[0], out int quantite))
+            {
+                string robotName = string.Join(" ", parts.Skip(1)).Trim();
+                if (commandes.ContainsKey(robotName))
                 {
-                    string robotName = string.Join(" ", parts.Skip(1)).Trim();
-                    if (commandes.ContainsKey(robotName))
-                    {
-                        commandes[robotName] += quantite;
-                    }
-                    else
-                    {
-                        commandes[robotName] = quantite;
-                    }
+                    commandes[robotName] += quantite;
                 }
                 else
                 {
-                    Console.WriteLine($"Quantité invalide pour la commande : {robot}");
+                    commandes[robotName] = quantite;
                 }
+            }
+            else
+            {
+                Console.WriteLine($"Quantité invalide pour la commande : {robot}");
+            }
             //}
             //else
             //{
@@ -156,5 +170,5 @@ class Program
 
         return commandes;
     }
-   
+
 }
