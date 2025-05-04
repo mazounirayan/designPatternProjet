@@ -61,47 +61,34 @@ class Program
 
     static void Main()
     {
-
         var stock = init();
         Factory factory = new Factory(stock);
         Console.WriteLine("Bienvenue. Tapez vos instructions (EXIT pour quitter).");
+
         while (true)
         {
             Console.Write("> ");
             string? input = Console.ReadLine();
-
             if (string.IsNullOrWhiteSpace(input))
             {
                 Console.WriteLine("Commande vide !");
                 return;
             }
             if (input.Trim().Equals("EXIT", StringComparison.OrdinalIgnoreCase))
-            break;
-
+                break;
             int indexPremierEspace = input.IndexOf(' ');
-
             if (indexPremierEspace != -1)
             {
                 var USER_INSTRUCTION = input.Substring(0, indexPremierEspace).Trim();
-
                 var elements = input.Substring(indexPremierEspace + 1).Trim();
-
-
-
                 Dictionary<string, int> commandes = TraiterCommande(elements);
-
-
-
                 switch (USER_INSTRUCTION)
                 {
                     case "STOCKS":
                         factory.displayStock();
                         break;
                     case "NEEDED_STOCKS":
-
                         factory.displayNeededStock(commandes);
-
-
                         break;
                     case "INSTRUCTIONS":
                         factory.ProcessInstructionCommand(commandes);
@@ -126,51 +113,58 @@ class Program
             }
             else
             {
-                Console.WriteLine("Format invalide !");
+                switch (input.ToUpperInvariant()){
+                    case "STOCKS":
+                        factory.displayStock();
+                        break;
+                    default:
+                        Console.WriteLine("ERROR Commande vide ou incorrecte.");
+                        break;
+                }
             }
         }
         Console.WriteLine("Programme terminé.");
     }
 
-    static Dictionary<string, int> TraiterCommande(string elements)
+static Dictionary<string, int> TraiterCommande(string elements)
+{
+    var commandes = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+    if (string.IsNullOrWhiteSpace(elements))
+        return commandes;
+
+    var robots = elements.Split(',');
+
+    foreach (var robot in robots)
     {
-        var commandes = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        var parts = robot.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-        if (string.IsNullOrWhiteSpace(elements))
-            return commandes;
-
-        var robots = elements.Split(',');
-
-        foreach (var robot in robots)
+        //if (parts.Length >= 1)
+        //{
+        if (int.TryParse(parts[0], out int quantite))
         {
-            var parts = robot.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-
-            //if (parts.Length >= 1)
-            //{
-            if (int.TryParse(parts[0], out int quantite))
+            string robotName = string.Join(" ", parts.Skip(1)).Trim();
+            if (commandes.ContainsKey(robotName))
             {
-                string robotName = string.Join(" ", parts.Skip(1)).Trim();
-                if (commandes.ContainsKey(robotName))
-                {
-                    commandes[robotName] += quantite;
-                }
-                else
-                {
-                    commandes[robotName] = quantite;
-                }
+                commandes[robotName] += quantite;
             }
             else
             {
-                Console.WriteLine($"Quantité invalide pour la commande : {robot}");
+                commandes[robotName] = quantite;
             }
-            //}
-            //else
-            //{
-            //    Console.WriteLine($"Commande mal formatée : {robot}");
-            //}
         }
-
-        return commandes;
+        else
+        {
+            Console.WriteLine($"Quantité invalide pour la commande : {robot}");
+        }
+        //}
+        //else
+        //{
+        //    Console.WriteLine($"Commande mal formatée : {robot}");
+        //}
     }
+
+    return commandes;
+}
 
 }
