@@ -64,70 +64,72 @@ class Program
 
         var stock = init();
         Factory factory = new Factory(stock);
-        Console.WriteLine("Veuillez entrer votre commande :");
-        string input = Console.ReadLine();
-
-        if (string.IsNullOrWhiteSpace(input))
+        Console.WriteLine("Bienvenue. Tapez vos instructions (EXIT pour quitter).");
+        while (true)
         {
-            Console.WriteLine("Commande vide !");
-            return;
-        }
+            Console.Write("> ");
+            string? input = Console.ReadLine();
 
-        int indexPremierEspace = input.IndexOf(' ');
-
-        if (indexPremierEspace != -1)
-        {
-            var USER_INSTRUCTION = input.Substring(0, indexPremierEspace).Trim();
-
-            var elements = input.Substring(indexPremierEspace + 1).Trim();
-
-
-
-            Dictionary<string, int> commandes = TraiterCommande(elements);
-
-
-
-            switch (USER_INSTRUCTION)
+            if (string.IsNullOrWhiteSpace(input))
             {
-                case "STOCKS":
-                    factory.displayStock();
-                    break;
-                case "NEEDED_STOCKS":
-
-                    factory.displayNeededStock(commandes);
-
-
-                    break;
-                case "INSTRUCTIONS":
-                    factory.ProcessInstructionCommand(commandes);
-                    break;
-                case "VERIFY":
-                    string result = factory.VerifyCommand(commandes);
-                    if (result.StartsWith("ERROR"))
-                    {
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine(result);
-                        Console.ResetColor();
-                    }
-                    else
-                    {
-                        Console.WriteLine(result);
-                    }
-                    break;
-                case "PRODUCE":
-                    factory.ProduceCommand(commandes);
-                    break;
-
+                Console.WriteLine("Commande vide !");
+                return;
             }
+            if (input.Trim().Equals("EXIT", StringComparison.OrdinalIgnoreCase))
+            break;
+
+            int indexPremierEspace = input.IndexOf(' ');
+
+            if (indexPremierEspace != -1)
+            {
+                var USER_INSTRUCTION = input.Substring(0, indexPremierEspace).Trim();
+
+                var elements = input.Substring(indexPremierEspace + 1).Trim();
 
 
+
+                Dictionary<string, int> commandes = TraiterCommande(elements);
+
+
+
+                switch (USER_INSTRUCTION)
+                {
+                    case "STOCKS":
+                        factory.displayStock();
+                        break;
+                    case "NEEDED_STOCKS":
+
+                        factory.displayNeededStock(commandes);
+
+
+                        break;
+                    case "INSTRUCTIONS":
+                        factory.ProcessInstructionCommand(commandes);
+                        break;
+                    case "VERIFY":
+                        string result = factory.VerifyCommand(commandes);
+                        if (result.StartsWith("ERROR"))
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine(result);
+                            Console.ResetColor();
+                        }
+                        else
+                        {
+                            Console.WriteLine(result);
+                        }
+                        break;
+                    case "PRODUCE":
+                        factory.ProduceCommand(commandes);
+                        break;
+                }
+            }
+            else
+            {
+                Console.WriteLine("Format invalide !");
+            }
         }
-        else
-        {
-            Console.WriteLine("Format invalide !");
-        }
-
-
+        Console.WriteLine("Programme terminé.");
     }
 
     static Dictionary<string, int> TraiterCommande(string elements)
