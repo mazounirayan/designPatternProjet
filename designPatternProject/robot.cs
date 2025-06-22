@@ -6,19 +6,19 @@ namespace designPatternProject
 {
     public class Robot
     {
-        public string        name           { get; set; }
-        public int           quantite       { get; set; }
-        public Category      cat            { get; set; } 
-        public List<Piece>   requiredPieces { get; set; }
+        public string name { get; set; }
+        public int quantite { get; set; }
+        public Category cat { get; set; }
+        public List<Piece> requiredPieces { get; set; }
 
         public Robot(string name, int quantite, Category cat, List<Piece> requiredPieces)
         {
             if (cat == Category.G)
                 throw new ArgumentException("Un robot ne peut pas être de catégorie Généraliste (G).", nameof(cat));
 
-            this.name           = name;
-            this.quantite       = quantite;
-            this.cat            = cat;
+            this.name = name;
+            this.quantite = quantite;
+            this.cat = cat;
             this.requiredPieces = requiredPieces ?? new List<Piece>();
         }
 
@@ -32,9 +32,24 @@ namespace designPatternProject
 
         public bool IsBuildable()
         {
-            return requiredPieces.All(p =>
-                Compatibility.IsCompatible(cat, p.cat, p.isSystem));
+            bool categoriesOk = requiredPieces.All(p =>
+                Compatibility.IsCompatible(cat,
+                                           p.cat,
+                                           p.isSystem || p.isModule));
+            if (!categoriesOk) return false;
+
+            int moduleCount = requiredPieces.Count(p => p.isModule);
+            int maxAllowed = cat switch
+            {
+                Category.D => 1,
+                Category.I => 3,
+                Category.M => 2,
+                _ => 0
+            };
+
+            return moduleCount <= maxAllowed;
         }
+
 
 
         public void Affichepieces(int quantite)
