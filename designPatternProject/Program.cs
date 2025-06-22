@@ -138,6 +138,13 @@ class Program
                     case "PRODUCE":
                         factory.ProduceCommand(commandes);
                         break;
+                    case "RECEIVE":
+                        {
+                            Dictionary<string, int> receives = TraiterCommande(elements);
+                            string res = factory.ReceiveItems(receives);
+                            Console.WriteLine(res);
+                            break;
+                        }
 
                     default:
                         Console.WriteLine("ERROR Commande inconnue.");

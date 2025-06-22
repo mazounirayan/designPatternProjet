@@ -265,8 +265,42 @@ namespace designPatternProject
             return Category.I;
         }
 
+        public string ReceiveItems(Dictionary<string, int> items)
+        {
+            foreach (var kv in items)
+            {
+                string name = kv.Key;
+                int qty = kv.Value;
+
+                var robot = depot.robots
+                                 .FirstOrDefault(r => r.name.Equals(name,
+                                                    StringComparison.OrdinalIgnoreCase));
+                if (robot != null)
+                {
+                    robot.quantite += qty;
+                    continue;
+                }
+
+                var piece = depot.pieces
+                                 .FirstOrDefault(p => p.name.Equals(name,
+                                                    StringComparison.OrdinalIgnoreCase));
+                if (piece != null)
+                {
+                    piece.quantite += qty;
+                    continue;
+                }
+
+                return $"ERROR Unknown reference: {name}";
+            }
+
+            return "STOCK_UPDATED";
+        }
+
+
 
     }
+
+
 
 
 
