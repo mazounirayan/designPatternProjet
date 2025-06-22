@@ -159,15 +159,12 @@ namespace designPatternProject
                 if (robot is null)
                     return $"ERROR '{c.Key}' is not a recognized robot";
 
-                // Interdit : un robot de catégorie G
                 if (robot.cat == Category.G)
                     return $"ERROR Robot '{robot.name}' cannot be of category G";
 
-                // Vérifie la compatibilité Règle 4.1
                 if (!robot.IsBuildable())
                     return $"ERROR Incompatible pieces for robot '{robot.name}'";
 
-                // Vérifie qu’on a assez de stock
                 foreach (var kv in robot.GetRequiredPiecesForQuantity(c.Value))
                 {
                     var pieceInStock = depot.pieces.FirstOrDefault(p => p.name == kv.Key);
@@ -217,7 +214,61 @@ namespace designPatternProject
             Thread.Sleep(1000);
         }
 
+        public string AddTemplate(string templateName, List<string> pieceNames)
+        {
+            if (depot.robots.Any(r => r.name.Equals(templateName,
+                                StringComparison.OrdinalIgnoreCase)))
+                return $"ERROR Template '{templateName}' already exists";
+
+            var piecesForTemplate = new List<Piece>();
+
+            foreach (var pieceName in pieceNames)
+            {
+                var pieceInCatalog = depot.pieces
+                    .FirstOrDefault(p => p.name.Equals(pieceName,
+                                       StringComparison.OrdinalIgnoreCase));
+
+                if (pieceInCatalog == null)
+                    return $"ERROR Unknown piece : {pieceName}";
+
+                piecesForTemplate.Add(new Piece(pieceInCatalog.name,
+                                                1,
+                                                pieceInCatalog.cat,
+                                                pieceInCatalog.isSystem));
+            }
+
+            Category robotCat = DeduceRobotCategory(piecesForTemplate);
+            if (robotCat == Category.G)
+                return "ERROR A robot cannot be of category G";
+
+            bool allOk = piecesForTemplate.All(p =>
+                Compatibility.IsCompatible(robotCat, p.cat, p.isSystem));
+
+            if (!allOk)
+                return "ERROR Pieces are not compatible with the deduced robot category";
+
+            var newRobot = new Robot(templateName, 0, robotCat, piecesForTemplate);
+            depot.robots.Add(newRobot);
+
+            return "TEMPLATE_ADDED";
+        }
+
+
+        private Category DeduceRobotCategory(IEnumerable<Piece> pieces)
+        {
+            if (pieces.Any(p => p.cat == Category.M && !p.isSystem))
+                return Category.M;
+
+            if (pieces.Any(p => p.cat == Category.D))
+                return Category.D;
+
+            return Category.I;
+        }
+
+
     }
+
+
 
 
 

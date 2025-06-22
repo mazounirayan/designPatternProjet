@@ -8,7 +8,7 @@ namespace designPatternProject
     {
         public string        name           { get; set; }
         public int           quantite       { get; set; }
-        public Category      cat            { get; set; }               // D, I ou M (jamais G)
+        public Category      cat            { get; set; } 
         public List<Piece>   requiredPieces { get; set; }
 
         public Robot(string name, int quantite, Category cat, List<Piece> requiredPieces)
@@ -30,17 +30,12 @@ namespace designPatternProject
             return result;
         }
 
-        /// <summary>
-        /// Vérifie que toutes les pièces/systèmes du robot sont compatibles
-        /// avec la catégorie du robot, selon les règles 4.1.
-        /// </summary>
         public bool IsBuildable()
         {
             return requiredPieces.All(p =>
                 Compatibility.IsCompatible(cat, p.cat, p.isSystem));
         }
 
-        /* Méthodes d’affichage inchangées, juste enrichies de la catégorie. */
 
         public void Affichepieces(int quantite)
         {

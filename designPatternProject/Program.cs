@@ -8,33 +8,26 @@ class Program
 {
     static Stock init()
     {
-        // ------------------ STOCK GLOBAL ------------------
         var piecesTotal = new List<Piece>
     {
-        //  Core
         new Piece("Core_CM1", 10, Category.M),
         new Piece("Core_CD1", 10, Category.D),
         new Piece("Core_CI1", 10, Category.I),
 
-        //  Generators
         new Piece("Generator_GM1", 10, Category.M),
         new Piece("Generator_GD1", 10, Category.D),
         new Piece("Generator_GI1", 10, Category.I),
 
-        //  Arms
         new Piece("Arms_AM1", 10, Category.M),
         new Piece("Arms_AD1", 10, Category.D),
         new Piece("Arms_AI1", 10, Category.I),
 
-        //  Legs
         new Piece("Legs_LM1", 10, Category.M),
         new Piece("Legs_LD1", 10, Category.D),
         new Piece("Legs_LI1", 10, Category.I),
 
-        // (aucun « System_… » dans ta v2 ; tu les ajouteras plus tard avec isSystem = true)
     };
 
-        // ------------------ TEMPLATES DES ROBOTS ------------------
         var partsXM = new List<Piece>
     {
         new Piece("Core_CM1",       1, Category.M),
@@ -59,7 +52,6 @@ class Program
         new Piece("Legs_LI1",       1, Category.I)
     };
 
-        // ------------------ ROBOTS ------------------
         var robots = new List<Robot>
     {
         new Robot("XM-1", 2, Category.M, partsXM), // Militaire
@@ -75,6 +67,7 @@ class Program
     {
         var stock = init();
         Factory factory = new Factory(stock);
+
         Console.WriteLine("Bienvenue. Tapez vos instructions (EXIT pour quitter).");
 
         while (true)
@@ -84,27 +77,53 @@ class Program
             if (string.IsNullOrWhiteSpace(input))
             {
                 Console.WriteLine("Commande vide !");
-                return;
+                continue;
             }
             if (input.Trim().Equals("EXIT", StringComparison.OrdinalIgnoreCase))
                 break;
+
             int indexPremierEspace = input.IndexOf(' ');
             if (indexPremierEspace != -1)
             {
                 var USER_INSTRUCTION = input.Substring(0, indexPremierEspace).Trim();
                 var elements = input.Substring(indexPremierEspace + 1).Trim();
+
+                if (USER_INSTRUCTION.Equals("ADD_TEMPLATE", StringComparison.OrdinalIgnoreCase))
+                {
+                    var parts = elements.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                        .Select(p => p.Trim())
+                                        .ToList();
+
+                    if (parts.Count < 2)
+                    {
+                        Console.WriteLine("ERROR Mauvais format : NOM_TEMPLATE, pièce1, …");
+                        continue;
+                    }
+
+                    string templateName = parts[0];
+                    List<string> pieceIds = parts.Skip(1).ToList();
+
+                    string res = factory.AddTemplate(templateName, pieceIds);
+                    Console.WriteLine(res);
+                    continue;
+                }
+
                 Dictionary<string, int> commandes = TraiterCommande(elements);
+
                 switch (USER_INSTRUCTION)
                 {
                     case "STOCKS":
                         factory.displayStock();
                         break;
+
                     case "NEEDED_STOCKS":
                         factory.displayNeededStock(commandes);
                         break;
+
                     case "INSTRUCTIONS":
                         factory.ProcessInstructionCommand(commandes);
                         break;
+
                     case "VERIFY":
                         string result = factory.VerifyCommand(commandes);
                         if (result.StartsWith("ERROR"))
@@ -113,13 +132,15 @@ class Program
                             Console.WriteLine(result);
                             Console.ResetColor();
                         }
-                        else
-                        {
-                            Console.WriteLine(result);
-                        }
+                        else Console.WriteLine(result);
                         break;
+
                     case "PRODUCE":
                         factory.ProduceCommand(commandes);
+                        break;
+
+                    default:
+                        Console.WriteLine("ERROR Commande inconnue.");
                         break;
                 }
             }
@@ -139,6 +160,7 @@ class Program
         Console.WriteLine("Programme terminé.");
     }
 
+
     static Dictionary<string, int> TraiterCommande(string elements)
     {
         var commandes = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
@@ -152,8 +174,7 @@ class Program
         {
             var parts = robot.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-            //if (parts.Length >= 1)
-            //{
+
             if (int.TryParse(parts[0], out int quantite))
             {
                 string robotName = string.Join(" ", parts.Skip(1)).Trim();
@@ -170,11 +191,6 @@ class Program
             {
                 Console.WriteLine($"Quantité invalide pour la commande : {robot}");
             }
-            //}
-            //else
-            //{
-            //    Console.WriteLine($"Commande mal formatée : {robot}");
-            //}
         }
 
         return commandes;
