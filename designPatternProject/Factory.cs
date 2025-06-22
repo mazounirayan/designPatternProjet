@@ -147,29 +147,40 @@ namespace designPatternProject
         }
         public string VerifyCommand(Dictionary<string, int> commandes)
         {
-            if (commandes == null || commandes.Count == 0)
+            if (commandes is null || commandes.Count == 0)
                 return "ERROR Commande vide ou incorrecte.";
 
             foreach (var c in commandes)
             {
-                var robot = depot.robots.FirstOrDefault(r => r.name == c.Key);
-                if (robot == null)
+                var robot = depot.robots
+                                 .FirstOrDefault(r => r.name.Equals(c.Key,
+                                                     StringComparison.OrdinalIgnoreCase));
+
+                if (robot is null)
                     return $"ERROR '{c.Key}' is not a recognized robot";
 
-                var requiredPieces = robot.GetRequiredPiecesForQuantity(c.Value);
-                foreach (var piece in requiredPieces)
-                {
-                    var pieceInStock = depot.pieces.FirstOrDefault(p => p.name == piece.Key);
-                    if (pieceInStock == null)
-                        return $"ERROR Pièce inconnue : {piece.Key}";
+                // Interdit : un robot de catégorie G
+                if (robot.cat == Category.G)
+                    return $"ERROR Robot '{robot.name}' cannot be of category G";
 
-                    if (pieceInStock.quantite < piece.Value)
+                // Vérifie la compatibilité Règle 4.1
+                if (!robot.IsBuildable())
+                    return $"ERROR Incompatible pieces for robot '{robot.name}'";
+
+                // Vérifie qu’on a assez de stock
+                foreach (var kv in robot.GetRequiredPiecesForQuantity(c.Value))
+                {
+                    var pieceInStock = depot.pieces.FirstOrDefault(p => p.name == kv.Key);
+                    if (pieceInStock is null)
+                        return $"ERROR Pièce inconnue : {kv.Key}";
+                    if (pieceInStock.quantite < kv.Value)
                         return "UNAVAILABLE";
                 }
             }
 
             return "AVAILABLE";
         }
+
 
         public void ProduceCommand(Dictionary<string, int> commandes)
         {

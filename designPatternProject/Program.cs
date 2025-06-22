@@ -8,56 +8,68 @@ class Program
 {
     static Stock init()
     {
-
+        // ------------------ STOCK GLOBAL ------------------
         var piecesTotal = new List<Piece>
-        {
-          new Piece ("Core_CM1", 10),
-            new Piece ("Core_CD1", 10),
-            new Piece ("Core_CI1", 10),
-            new Piece ("Generator_GM1", 10),
-            new Piece ("Generator_GD1", 10),
-            new Piece ("Generator_GI1", 10),
-            new Piece ("Arms_AM1", 10),
-            new Piece ("Arms_AD1", 10),
-            new Piece ("Arms_AI1", 10),
-            new Piece ("Legs_LM1", 10),
-            new Piece ("Legs_LD1", 10),
-            new Piece ("Legs_LI1", 10)
+    {
+        //  Core
+        new Piece("Core_CM1", 10, Category.M),
+        new Piece("Core_CD1", 10, Category.D),
+        new Piece("Core_CI1", 10, Category.I),
 
+        //  Generators
+        new Piece("Generator_GM1", 10, Category.M),
+        new Piece("Generator_GD1", 10, Category.D),
+        new Piece("Generator_GI1", 10, Category.I),
 
-        };
-        var pieces1 = new List<Piece>
-        {
-          new Piece ( "Core_CM1",  1 ),
-            new Piece ("Generator_GM1", 1),
-            new Piece ("Arms_AM1", 1),
-            new Piece ("Legs_LM1", 1),
+        //  Arms
+        new Piece("Arms_AM1", 10, Category.M),
+        new Piece("Arms_AD1", 10, Category.D),
+        new Piece("Arms_AI1", 10, Category.I),
 
-        };
-        var pieces2 = new List<Piece>
-        {
-            new Piece ("Core_CD1", 1),
-            new Piece ("Generator_GD1", 1),
-            new Piece ("Arms_AD1", 1),
-            new Piece ("Legs_LD1", 1),
+        //  Legs
+        new Piece("Legs_LM1", 10, Category.M),
+        new Piece("Legs_LD1", 10, Category.D),
+        new Piece("Legs_LI1", 10, Category.I),
 
-        };
-        var pieces3 = new List<Piece>
-        {
-            new Piece ("Core_CI1", 1),
-            new Piece ("Generator_GI1", 1),
-            new Piece ("Arms_AI1", 1),
-            new Piece ("Legs_LI1", 1),
+        // (aucun « System_… » dans ta v2 ; tu les ajouteras plus tard avec isSystem = true)
+    };
 
-        };
-        Robot robot1 = new Robot("XM-1", 2, pieces1);
-        Robot robot2 = new Robot("RD-1", 2, pieces2);
-        Robot robot3 = new Robot("WI-1", 2, pieces3);
+        // ------------------ TEMPLATES DES ROBOTS ------------------
+        var partsXM = new List<Piece>
+    {
+        new Piece("Core_CM1",       1, Category.M),
+        new Piece("Generator_GM1",  1, Category.M),
+        new Piece("Arms_AM1",       1, Category.M),
+        new Piece("Legs_LM1",       1, Category.M)
+    };
 
-        var robots = new List<Robot> { robot1, robot2, robot3 };
+        var partsRD = new List<Piece>
+    {
+        new Piece("Core_CD1",       1, Category.D),
+        new Piece("Generator_GD1",  1, Category.D),
+        new Piece("Arms_AD1",       1, Category.D),
+        new Piece("Legs_LD1",       1, Category.D)
+    };
+
+        var partsWI = new List<Piece>
+    {
+        new Piece("Core_CI1",       1, Category.I),
+        new Piece("Generator_GI1",  1, Category.I),
+        new Piece("Arms_AI1",       1, Category.I),
+        new Piece("Legs_LI1",       1, Category.I)
+    };
+
+        // ------------------ ROBOTS ------------------
+        var robots = new List<Robot>
+    {
+        new Robot("XM-1", 2, Category.M, partsXM), // Militaire
+        new Robot("RD-1", 2, Category.D, partsRD), // Domestique
+        new Robot("WI-1", 2, Category.I, partsWI)  // Industriel
+    };
 
         return new Stock(piecesTotal, robots);
     }
+
 
     static void Main()
     {
@@ -113,7 +125,8 @@ class Program
             }
             else
             {
-                switch (input.ToUpperInvariant()){
+                switch (input.ToUpperInvariant())
+                {
                     case "STOCKS":
                         factory.displayStock();
                         break;
@@ -126,45 +139,45 @@ class Program
         Console.WriteLine("Programme terminé.");
     }
 
-static Dictionary<string, int> TraiterCommande(string elements)
-{
-    var commandes = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-
-    if (string.IsNullOrWhiteSpace(elements))
-        return commandes;
-
-    var robots = elements.Split(',');
-
-    foreach (var robot in robots)
+    static Dictionary<string, int> TraiterCommande(string elements)
     {
-        var parts = robot.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var commandes = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-        //if (parts.Length >= 1)
-        //{
-        if (int.TryParse(parts[0], out int quantite))
+        if (string.IsNullOrWhiteSpace(elements))
+            return commandes;
+
+        var robots = elements.Split(',');
+
+        foreach (var robot in robots)
         {
-            string robotName = string.Join(" ", parts.Skip(1)).Trim();
-            if (commandes.ContainsKey(robotName))
+            var parts = robot.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+            //if (parts.Length >= 1)
+            //{
+            if (int.TryParse(parts[0], out int quantite))
             {
-                commandes[robotName] += quantite;
+                string robotName = string.Join(" ", parts.Skip(1)).Trim();
+                if (commandes.ContainsKey(robotName))
+                {
+                    commandes[robotName] += quantite;
+                }
+                else
+                {
+                    commandes[robotName] = quantite;
+                }
             }
             else
             {
-                commandes[robotName] = quantite;
+                Console.WriteLine($"Quantité invalide pour la commande : {robot}");
             }
+            //}
+            //else
+            //{
+            //    Console.WriteLine($"Commande mal formatée : {robot}");
+            //}
         }
-        else
-        {
-            Console.WriteLine($"Quantité invalide pour la commande : {robot}");
-        }
-        //}
-        //else
-        //{
-        //    Console.WriteLine($"Commande mal formatée : {robot}");
-        //}
-    }
 
-    return commandes;
-}
+        return commandes;
+    }
 
 }
