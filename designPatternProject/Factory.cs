@@ -11,6 +11,8 @@ namespace designPatternProject
     internal class Factory
     {
         public Stock depot;
+        private readonly List<Movement> history = new();
+
 
         public Factory(Stock depot)
         {
@@ -19,6 +21,11 @@ namespace designPatternProject
 
 
 
+        private void LogMovement(string instruction,
+                    Dictionary<string, int> delta)
+        {
+            history.Add(new Movement(DateTime.Now, instruction, delta));
+        }
         public void totalStock(Dictionary<string, int> commandes)
         {
             var totalPieces = new Dictionary<string, int>();
@@ -179,7 +186,8 @@ namespace designPatternProject
         }
 
 
-        public void ProduceCommand(Dictionary<string, int> commandes)
+        public void ProduceCommand(Dictionary<string, int> commandes,
+                           string rawInstruction)
         {
             var result = VerifyCommand(commandes);
             if (result != "AVAILABLE")
@@ -188,19 +196,27 @@ namespace designPatternProject
                 return;
             }
 
+            var delta = new Dictionary<string, int>();
+
             foreach (var order in commandes)
             {
                 var robot = depot.robots.First(r =>
                     r.name.Equals(order.Key, StringComparison.OrdinalIgnoreCase));
+
                 robot.quantite += order.Value;
+                delta[order.Key] = delta.GetValueOrDefault(order.Key, 0) + order.Value;
 
                 foreach (var kv in robot.GetRequiredPiecesForQuantity(order.Value))
                 {
                     var piece = depot.pieces.First(p =>
                         p.name.Equals(kv.Key, StringComparison.OrdinalIgnoreCase));
+
                     piece.quantite -= kv.Value;
+                    delta[kv.Key] = delta.GetValueOrDefault(kv.Key, 0) - kv.Value;
                 }
             }
+
+            LogMovement(rawInstruction, delta);
 
             Console.WriteLine("STOCK_UPDATED");
         }
@@ -265,7 +281,7 @@ namespace designPatternProject
             return Category.I;
         }
 
-        public string ReceiveItems(Dictionary<string, int> items)
+        public string ReceiveItems(Dictionary<string, int> items, string rawInstruction)
         {
             foreach (var kv in items)
             {
@@ -292,7 +308,7 @@ namespace designPatternProject
 
                 return $"ERROR Unknown reference: {name}";
             }
-
+            LogMovement(rawInstruction, items);
             return "STOCK_UPDATED";
         }
 
@@ -368,28 +384,30 @@ namespace designPatternProject
             return "AVAILABLE";
         }
 
-        internal void ProduceOrders(List<RobotOrder> orders)
+        internal void ProduceOrders(List<RobotOrder> orders,
+                                    string rawInstruction)
         {
-            string chk = VerifyOrders(orders);
-            if (chk != "AVAILABLE")
-            {
-                Console.WriteLine(chk);
-                return;
-            }
+            if (VerifyOrders(orders) != "AVAILABLE") { Console.WriteLine("UNAVAILABLE"); return; }
+
+            var delta = new Dictionary<string, int>();
 
             foreach (var ord in orders)
             {
                 var template = depot.robots.First(r => r.name.Equals(ord.RobotName,
-                                             StringComparison.OrdinalIgnoreCase));
+                                            StringComparison.OrdinalIgnoreCase));
 
                 var pieces1 = ApplyMods(template, ord.Mods);
                 foreach (var kv in pieces1)
                 {
                     var pieceObj = depot.pieces.First(p => p.name == kv.Key);
                     pieceObj.quantite -= kv.Value * ord.Qty;
+                    delta[kv.Key] = delta.GetValueOrDefault(kv.Key, 0) - kv.Value * ord.Qty;
                 }
                 template.quantite += ord.Qty;
+                delta[ord.RobotName] = delta.GetValueOrDefault(ord.RobotName, 0) + ord.Qty;
             }
+
+            LogMovement(rawInstruction, delta);
             Console.WriteLine("STOCK_UPDATED");
         }
 
@@ -415,6 +433,18 @@ namespace designPatternProject
 
             }
         }
+        public void DisplayMovements(IEnumerable<string> filters)
+        {
+            var list = (filters.Any())
+                       ? history.Where(h => h.Delta.Keys.Any(k =>
+                                 filters.Any(f => f.Equals(k, StringComparison.OrdinalIgnoreCase))))
+                       : history;
+
+            foreach (var m in list.OrderBy(h => h.Timestamp))
+                Console.WriteLine($"{m.Timestamp:yyyy-MM-dd HH:mm:ss}  {m.Instruction}");
+        }
+
+
 
 
 

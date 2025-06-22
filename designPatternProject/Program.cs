@@ -55,8 +55,8 @@ class Program
         var robots = new List<Robot>
     {
         new Robot("XM-1", 2, Category.M, partsXM),
-        new Robot("RD-1", 2, Category.D, partsRD), 
-        new Robot("WI-1", 2, Category.I, partsWI) 
+        new Robot("RD-1", 2, Category.D, partsRD),
+        new Robot("WI-1", 2, Category.I, partsWI)
     };
 
         return new Stock(piecesTotal, robots);
@@ -64,120 +64,131 @@ class Program
 
 
     static void Main()
-{
-    var stock   = init();
-    var factory = new Factory(stock);
-
-    Console.WriteLine("Bienvenue. Tapez vos instructions (EXIT pour quitter).");
-
-    while (true)
     {
-        Console.Write("> ");
-        string? input = Console.ReadLine();
-        if (string.IsNullOrWhiteSpace(input))
+        var stock = init();
+        var factory = new Factory(stock);
+
+        Console.WriteLine("Bienvenue. Tapez vos instructions (EXIT pour quitter).");
+
+        while (true)
         {
-            Console.WriteLine("Commande vide !");
-            continue;
-        }
-        if (input.Trim().Equals("EXIT", StringComparison.OrdinalIgnoreCase))
-            break;
-
-        int idxSpace = input.IndexOf(' ');
-        if (idxSpace == -1)
-        {
-            if (input.Equals("STOCKS", StringComparison.OrdinalIgnoreCase))
-                factory.displayStock();
-            else
-                Console.WriteLine("ERROR Commande vide ou incorrecte.");
-            continue;
-        }
-
-        string instr   = input[..idxSpace].Trim().ToUpperInvariant();
-        string argsStr = input[(idxSpace + 1)..].Trim();
-
-        if (instr == "ADD_TEMPLATE")
-        {
-            var parts = argsStr.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                               .Select(p => p.Trim()).ToList();
-
-            if (parts.Count < 2)
+            Console.Write("> ");
+            string? input = Console.ReadLine();
+            if (string.IsNullOrWhiteSpace(input))
             {
-                Console.WriteLine("ERROR Mauvais format : NOM_TEMPLATE, pièce1, …");
+                Console.WriteLine("Commande vide !");
                 continue;
             }
-            Console.WriteLine(factory.AddTemplate(parts[0], parts.Skip(1).ToList()));
-            continue;
-        }
+            if (input.Trim().Equals("EXIT", StringComparison.OrdinalIgnoreCase))
+                break;
 
-        if (instr == "RECEIVE")
-        {
-            var rec = TraiterCommande(argsStr);
-            Console.WriteLine(factory.ReceiveItems(rec));
-            continue;
-        }
-
-        bool containsMods = argsStr.Contains(" WITH ",    StringComparison.OrdinalIgnoreCase) ||
-                            argsStr.Contains(" WITHOUT ", StringComparison.OrdinalIgnoreCase) ||
-                            argsStr.Contains(" REPLACE ", StringComparison.OrdinalIgnoreCase) ||
-                            argsStr.Contains(';');
-
-        if (containsMods)
-        {
-            var orders = ParseRobotOrders(argsStr);
-
-            switch (instr)
+            int idxSpace = input.IndexOf(' ');
+            if (idxSpace == -1)
             {
-                case "VERIFY":
-                    Console.WriteLine(factory.VerifyOrders(orders));
-                    break;
+                if (input.Equals("STOCKS", StringComparison.OrdinalIgnoreCase))
+                    factory.displayStock();
+                else if (input.Equals("GET_MOVEMENTS", StringComparison.OrdinalIgnoreCase))
+                    factory.DisplayMovements(Array.Empty<string>());
+                else
+                    Console.WriteLine("ERROR Commande vide ou incorrecte.");
+                continue;
+            }
 
-                case "PRODUCE":
-                    factory.ProduceOrders(orders);
-                    break;
+            string instr = input[..idxSpace].Trim().ToUpperInvariant();
+            string argsStr = input[(idxSpace + 1)..].Trim();
 
-                case "NEEDED_STOCKS":
-                    factory.DisplayNeededStockOrders(orders);
-                    break;
+            if (instr == "ADD_TEMPLATE")
+            {
+                var parts = argsStr.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                   .Select(p => p.Trim()).ToList();
+                if (parts.Count < 2)
+                {
+                    Console.WriteLine("ERROR Mauvais format : NOM_TEMPLATE, pièce1, …");
+                    continue;
+                }
+                Console.WriteLine(factory.AddTemplate(parts[0], parts.Skip(1).ToList()));
+                continue;
+            }
 
-                case "INSTRUCTIONS":
-                    factory.ProcessInstructionOrders(orders);
-                    break;
+            if (instr == "RECEIVE")
+            {
+                var rec = TraiterCommande(argsStr);
+                Console.WriteLine(factory.ReceiveItems(rec, input));
+                continue;
+            }
 
-                default:
-                    Console.WriteLine("ERROR Commande inconnue.");
-                    break;
+            if (instr == "GET_MOVEMENTS")
+            {
+                var filt = argsStr.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                  .Select(s => s.Trim())
+                                  .Where(s => s.Length > 0)
+                                  .ToArray();
+                factory.DisplayMovements(filt);
+                continue;
+            }
+
+            bool containsMods = argsStr.Contains(" WITH ", StringComparison.OrdinalIgnoreCase) ||
+                                argsStr.Contains(" WITHOUT ", StringComparison.OrdinalIgnoreCase) ||
+                                argsStr.Contains(" REPLACE ", StringComparison.OrdinalIgnoreCase) ||
+                                argsStr.Contains(';');
+
+            if (containsMods)
+            {
+                var orders = ParseRobotOrders(argsStr);
+
+                switch (instr)
+                {
+                    case "VERIFY":
+                        Console.WriteLine(factory.VerifyOrders(orders));
+                        break;
+
+                    case "PRODUCE":
+                        factory.ProduceOrders(orders, input);
+                        break;
+
+                    case "NEEDED_STOCKS":
+                        factory.DisplayNeededStockOrders(orders);
+                        break;
+
+                    case "INSTRUCTIONS":
+                        factory.ProcessInstructionOrders(orders);
+                        break;
+
+                    default:
+                        Console.WriteLine("ERROR Commande inconnue.");
+                        break;
+                }
+            }
+            else
+            {
+                Dictionary<string, int> cmds = TraiterCommande(argsStr);
+
+                switch (instr)
+                {
+                    case "NEEDED_STOCKS":
+                        factory.displayNeededStock(cmds);
+                        break;
+
+                    case "INSTRUCTIONS":
+                        factory.ProcessInstructionCommand(cmds);
+                        break;
+
+                    case "VERIFY":
+                        Console.WriteLine(factory.VerifyCommand(cmds));
+                        break;
+
+                    case "PRODUCE":
+                        factory.ProduceCommand(cmds, input);
+                        break;
+
+                    default:
+                        Console.WriteLine("ERROR Commande inconnue.");
+                        break;
+                }
             }
         }
-        else
-        {
-            Dictionary<string,int> cmds = TraiterCommande(argsStr);
-
-            switch (instr)
-            {
-                case "NEEDED_STOCKS":
-                    factory.displayNeededStock(cmds);
-                    break;
-
-                case "INSTRUCTIONS":
-                    factory.ProcessInstructionCommand(cmds);
-                    break;
-
-                case "VERIFY":
-                    Console.WriteLine(factory.VerifyCommand(cmds));
-                    break;
-
-                case "PRODUCE":
-                    factory.ProduceCommand(cmds);
-                    break;
-
-                default:
-                    Console.WriteLine("ERROR Commande inconnue.");
-                    break;
-            }
-        }
+        Console.WriteLine("Programme terminé.");
     }
-    Console.WriteLine("Programme terminé.");
-}
 
 
     static Dictionary<string, int> TraiterCommande(string elements)
