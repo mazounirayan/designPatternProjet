@@ -296,9 +296,132 @@ namespace designPatternProject
             return "STOCK_UPDATED";
         }
 
+        private static Dictionary<string, int> ApplyMods(Robot baseRobot,
+                                                        List<ModItem> mods)
+        {
+            var req = baseRobot.GetRequiredPiecesForQuantity(1)
+                               .ToDictionary(kv => kv.Key, kv => kv.Value);
+
+            foreach (var m in mods)
+            {
+                if (m.Op == ModOp.WITH)
+                {
+                    req[m.PieceName] = req.GetValueOrDefault(m.PieceName, 0) + m.Qty;
+                }
+                else if (m.Op == ModOp.WITHOUT)
+                {
+                    if (!req.TryGetValue(m.PieceName, out int cur) || cur < m.Qty)
+                        throw new InvalidOperationException(
+                            $"Cannot remove {m.Qty} × {m.PieceName}");
+                    req[m.PieceName] = cur - m.Qty;
+                    if (req[m.PieceName] == 0) req.Remove(m.PieceName);
+                }
+                else
+                {
+                    if (!req.TryGetValue(m.PieceName, out int cur) || cur < m.Qty)
+                        throw new InvalidOperationException(
+                            $"Cannot replace {m.Qty} × {m.PieceName}");
+                    req[m.PieceName] = cur - m.Qty;
+                    if (req[m.PieceName] == 0) req.Remove(m.PieceName);
+                }
+            }
+            return req;
+        }
+        internal string VerifyOrders(List<RobotOrder> orders)
+        {
+            foreach (var ord in orders)
+            {
+                var template = depot.robots.FirstOrDefault(r =>
+                    r.name.Equals(ord.RobotName, StringComparison.OrdinalIgnoreCase));
+
+                if (template is null)
+                    return $"ERROR '{ord.RobotName}' unknown robot";
+
+                Dictionary<string, int> pieces;
+                try
+                {
+                    pieces = ApplyMods(template, ord.Mods);
+                }
+                catch (Exception ex)
+                {
+                    return $"ERROR {ex.Message}";
+                }
+
+                var virtualRobot = new Robot(template.name, 0, template.cat,
+                    pieces.Select(kv =>
+                    {
+                        var pObj = depot.pieces.First(p => p.name == kv.Key);
+                        return new Piece(pObj.name, kv.Value,
+                                         pObj.cat, pObj.isSystem, pObj.isModule);
+                    }).ToList());
+
+                if (!virtualRobot.IsBuildable())
+                    return $"ERROR Incompatible modifications on {ord.RobotName}";
+
+                foreach (var kv in pieces)
+                {
+                    var ps = depot.pieces.First(p => p.name == kv.Key);
+                    if (ps.quantite < kv.Value * ord.Qty)
+                        return "UNAVAILABLE";
+                }
+            }
+            return "AVAILABLE";
+        }
+
+        internal void ProduceOrders(List<RobotOrder> orders)
+        {
+            string chk = VerifyOrders(orders);
+            if (chk != "AVAILABLE")
+            {
+                Console.WriteLine(chk);
+                return;
+            }
+
+            foreach (var ord in orders)
+            {
+                var template = depot.robots.First(r => r.name.Equals(ord.RobotName,
+                                             StringComparison.OrdinalIgnoreCase));
+
+                var pieces1 = ApplyMods(template, ord.Mods);
+                foreach (var kv in pieces1)
+                {
+                    var pieceObj = depot.pieces.First(p => p.name == kv.Key);
+                    pieceObj.quantite -= kv.Value * ord.Qty;
+                }
+                template.quantite += ord.Qty;
+            }
+            Console.WriteLine("STOCK_UPDATED");
+        }
+
+        internal void DisplayNeededStockOrders(List<RobotOrder> orders)
+        {
+            foreach (var ord in orders)
+            {
+                var template = depot.robots.First(r => r.name.Equals(ord.RobotName,
+                                             StringComparison.OrdinalIgnoreCase));
+
+                var pieces1 = ApplyMods(template, ord.Mods);
+                Console.WriteLine($"Robot : {ord.RobotName}, Quantité : {ord.Qty}");
+                foreach (var kv in pieces1)
+                    Console.WriteLine($"  {kv.Value * ord.Qty}  Pièce : {kv.Key}");
+            }
+        }
+
+        internal void ProcessInstructionOrders(List<RobotOrder> orders)
+        {
+            foreach (var ord in orders)
+            {
+                Console.WriteLine($"[INSTRUCTIONS] {ord.Qty} × {ord.RobotName}");
+
+            }
+        }
+
+
 
 
     }
+
+
 
 
 
