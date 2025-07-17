@@ -1,0 +1,25 @@
+{
+  "Robots": {
+    "XM-1": 2,
+    "RD-1": 3,
+    "WI-1": 1
+  },
+  "Pieces": {
+    "Core_CM1": 10,
+    "Core_CD1": 10,
+    "Core_CI1": 10,
+    "Generator_GM1": 10,
+    "Generator_GD1": 10,
+    "Generator_GI1": 10,
+    "Arms_AM1": 10,
+    "Arms_AD1": 10,
+    "Arms_AI1": 10,
+    "Legs_LM1": 10,
+    "Legs_LD1": 10,
+    "Legs_LI1": 10,
+    "System_SB1": 10,
+    "System_SM1": 10,
+    "System_SD1": 10,
+    "System_SI1": 10
+  }
+}
